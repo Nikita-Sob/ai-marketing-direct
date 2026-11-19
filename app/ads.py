@@ -24,13 +24,18 @@ UTM_MAIN = ("?utm_source=yandex&utm_medium=cpc&utm_campaign={campaign_name}"
 
 
 def fit_limits(text: str, limit: int) -> str:
-    """Срезать текст до лимита по правилу Коммандера, не рвя слово."""
+    """Срезать текст до лимита по правилу Коммандера, не рвя слово.
+
+    Финальную точку/восклицание сохраняем: предложение остаётся предложением.
+    """
     if commander_len(text) <= limit:
         return text
     words = text.split()
     while words and commander_len(" ".join(words)) > limit:
         words.pop()
-    out = " ".join(words).rstrip(",.;:!")
+    out = " ".join(words).rstrip(",;:")
+    if text and text[-1] in ".!?" and not out.endswith((".", "!", "?")):
+        out += text[-1]
     return out
 
 
@@ -66,15 +71,21 @@ def generate_group_ad(group: dict, card: dict, idx: int) -> dict:
     h2s = ["В наличии", "Большой выбор", "Официальный сайт", "Доставка по РФ"]
     h2 = h2s[idx % len(h2s)]
 
-    # --- текст: 1-2 УТП + доставка ---
+    # --- текст: 1-2 УТП + доставка; предложения обязаны кончаться точкой ---
+    def _sentence(s: str) -> str:
+        s = (s or "").strip()
+        if s and s[-1] not in ".!?":
+            s += "."
+        return s
+
     parts = []
     if usps:
-        parts.append(fit_limits(usps[0], 70))
+        parts.append(fit_limits(_sentence(usps[0]), 70))
     parts.append("Доставка по России.")
     if len(usps) > 1:
-        p2 = fit_limits(usps[1], 40)
+        p2 = fit_limits(_sentence(usps[1]), 40)
         if p2 and commander_len(" ".join(parts + [p2])) <= LIMITS["text"]:
-            parts.insert(1, p2.rstrip(".") + ".")
+            parts.insert(1, p2)
     text = " ".join(parts)
     if not text.endswith((".", "!", "?")):
         text += "."

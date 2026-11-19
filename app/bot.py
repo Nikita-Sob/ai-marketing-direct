@@ -67,7 +67,9 @@ def parse_request(text: str, intent: str = None) -> dict:
     t = " ".join((text or "").split())
     intent = intent or parse_intent(t)
     low = t.lower()
-    combo = "комбо" in low or "combo" in low
+    # комбинаторика (7 заголовков + 3 текста) включена по умолчанию,
+    # выключается словами «без комбо»
+    combo = not any(k in low for k in ("без комбо", "без-комбо", "no combo", "просто"))
     if low.startswith(("seo", "сео", "прогноз", "forecast", "медиапрогноз",
                        "кампания", "campaign")):
         # срезаем слово-интент и двоеточие

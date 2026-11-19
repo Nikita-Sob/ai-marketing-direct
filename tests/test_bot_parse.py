@@ -12,7 +12,7 @@ class TestParse(unittest.TestCase):
         self.assertEqual(r["url"], "https://duplex-shop.ru")
         self.assertEqual(r["brief"], "рации для охоты")
         self.assertEqual(r["region"], "Москва и область")
-        self.assertFalse(r["combo"])
+        self.assertTrue(r["combo"])  # комбинаторика по умолчанию
 
     def test_no_region(self):
         r = parse_request("кампания: https://kuppersberg.ru | встраиваемая техника")
@@ -23,9 +23,13 @@ class TestParse(unittest.TestCase):
         self.assertEqual(r["url"], "https://kuppersberg.ru")
         self.assertEqual(r["brief"], "техника")
 
-    def test_combo_keyword(self):
-        r = parse_request("кампания: https://kuppersberg.ru | техника | Комбо")
-        self.assertTrue(r["combo"])
+    def test_combo_default_and_off(self):
+        r = parse_request("кампания: https://kuppersberg.ru | техника")
+        self.assertTrue(r["combo"])  # 7 заголовков + 3 текста по умолчанию
+        r = parse_request("кампания: https://kuppersberg.ru | техника | без комбо")
+        self.assertFalse(r["combo"])
+        r = parse_request("кампания: https://kuppersberg.ru | техника просто")
+        self.assertFalse(r["combo"])
 
     def test_domain_without_scheme(self):
         r = parse_request("кампания: duplex-shop.ru | рации")

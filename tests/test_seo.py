@@ -53,7 +53,7 @@ class TestIntent(unittest.TestCase):
         f = parse_request("прогноз: https://x.ru | техника | Москва и область",
                           "forecast")
         self.assertEqual(f["region"], "Москва и область")
-        self.assertFalse(f["combo"])
+        self.assertTrue(f["combo"])  # по умолчанию включена
 
 
 class TestFilterResults(unittest.TestCase):

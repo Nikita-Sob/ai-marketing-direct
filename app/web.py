@@ -173,7 +173,7 @@ async def api_run(request: Request):
         target=_worker,
         args=(job_id, mode, url, (body.get("brief") or "").strip(),
               (body.get("region") or ui.DEFAULT_REGION).strip(),
-              bool(body.get("wordstat")), bool(body.get("combo"))),
+              bool(body.get("wordstat")), bool(body.get("combo", True))),
         daemon=True).start()
     return {"job_id": job_id}
 
@@ -338,6 +338,11 @@ border-radius:10px;padding:16px;color:var(--err);margin-top:16px}
       <div><div class="t">Wordstat API</div>
       <div class="d">живые частоты запросов; без ключа работает встроенная модель</div></div>
     </div>
+    <div class="toggle" onclick="event.preventDefault();$('combo').click()">
+      <input type="checkbox" id="combo" checked>
+      <div><div class="t">Комбинаторика</div>
+      <div class="d">каждому объявлению 7 заголовков и 3 текста</div></div>
+    </div>
     <button class="cta" id="go" onclick="run()">Сформировать</button>
     <div class="linkrow"><a onclick="demo()">Пример: kuppersberg.ru · встраиваемая техника</a></div>
   </div>
@@ -384,7 +389,7 @@ async function run(){
  const r=await fetch('/api/run'+KEYQ,{method:'POST',
    headers:{'Content-Type':'application/json'},
    body:JSON.stringify({mode:MODE,url:url,brief:$('brief').value.trim(),
-     region:$('region').value,wordstat:$('wordstat').checked})});
+     region:$('region').value,wordstat:$('wordstat').checked,combo:$('combo').checked})});
  const j=await r.json();
  if(!r.ok){fail(j.detail||j.error||'ошибка');return;}
  const timer=setInterval(()=>{

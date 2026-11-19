@@ -115,9 +115,33 @@ class TestWeb(unittest.TestCase):
             st = web.JOBS.get(job_id, {})
         self.assertIn(st["status"], ("done", "error"))
         if st["status"] == "done":
-            self.assertTrue(st["files"] or st["summary"])
+            self.assertTrue(st["files"] or st["data"])
             fl = self.client.get("/api/files/%s" % job_id).json()
             self.assertTrue(fl["files"])
+            data = self.client.get("/api/job/%s" % job_id).json()
+            self.assertEqual(data["status"], "done")
+            self.assertEqual(data["data"]["title"], "Медиапрогноз готов")
+            self.assertTrue(data["data"]["metrics"])
+            self.assertIn("Бюджет", data["data"]["metrics"][2]["label"])
+
+    def test_run_campaign_data_shape(self):
+        r = self.client.post("/api/run", json={"mode": "campaign",
+                                               "url": "https://example.com"})
+        job_id = r.json()["job_id"]
+        import time
+        for _ in range(120):
+            with web.JOBS_LOCK:
+                st = web.JOBS.get(job_id, {}).get("status")
+            if st in ("done", "error"):
+                break
+            time.sleep(0.5)
+        with web.JOBS_LOCK:
+            st = dict(web.JOBS.get(job_id, {}))
+        if st["status"] == "done":
+            self.assertEqual(st["data"]["title"], "Кампания готова")
+            self.assertEqual([m["label"] for m in st["data"]["metrics"][:3]],
+                             ["Групп", "Фраз", "Ошибок"])
+            self.assertTrue(st["data"]["table"]["head"])
 
 
 if __name__ == "__main__":

@@ -215,7 +215,9 @@ main{flex:1;width:100%;max-width:1180px;margin:0 auto;padding:0 28px}
 .g-detail.swap{animation:swap .45s var(--ease)}
 @keyframes swap{from{opacity:0;transform:translateX(10px)}}
 .gd-h{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
-.gd-t{font-size:20px;font-weight:600;letter-spacing:-.025em;text-transform:capitalize}
+.gd-t{font-size:20px;font-weight:600;letter-spacing:-.025em}
+.gd-t::first-letter,.cap::first-letter{text-transform:uppercase}
+td.cap{display:table-cell}
 .gd-c{font:400 12.5px var(--mono);color:var(--fg-3)}
 .lbl{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-4);margin:26px 0 10px}
 

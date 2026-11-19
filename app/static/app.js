@@ -149,7 +149,7 @@ function pushLine(tSec, raw){
   if (p.cats != null){ ctr.cats=p.cats; setCtr(0, p.cats, 'бренд: '+p.brand); }
   if (p.group){ ctr.groups++; ctr.phrases+=p.ph; setCtr(1, ctr.groups, p.group.replace(/_/g,' ')); setCtr(2, ctr.phrases, '+'+p.ph+' из группы'); }
   if (p.coreG != null){ setCtr(1, p.coreG); setCtr(2, p.coreP); }
-  if (p.ws){ ctr.groups++; ctr.phrases+=p.wsp; setCtr(1, ctr.groups, p.ws); if(MODE==='seo') setCtr(2, ctr.phrases); }
+  if (p.ws && MODE!=='campaign'){ ctr.groups++; ctr.phrases+=p.wsp; setCtr(1, ctr.groups, p.ws); if(MODE==='seo') setCtr(2, ctr.phrases); }
 }
 
 async function follow(jobId){
@@ -213,7 +213,7 @@ function observe(){
 }
 function head(title, dim, url, extra){
   return `<div class="r-head reveal" style="--d:0"><div>
-    <span class="r-badge">${IC.ok}Готово за ${esc(String(RES.elapsed ?? '').replace('.',','))} с · валидация пройдена</span>
+    <span class="r-badge">${IC.ok}Готово за ${esc(String(RES.elapsed ?? '').replace('.',','))} с${MODE==='campaign'?(+RES.metrics[2].value?' · есть замечания':' · валидация пройдена'):''}</span>
     <h1 class="r-title">${title} <span class="dim">${dim}</span></h1>
     <div class="r-meta"><span class="mono">${esc(url)}</span><span>${esc(REGION)}</span>${extra||''}</div></div>
     <div class="r-actions"><button class="btn btn-g" onclick="App.reset()">${IC.back}Новый запрос</button>
@@ -249,7 +249,7 @@ async function renderResult(jobId, job, url){
     h += `<div class="kpis reveal" style="--d:1">${kpi(M[0].label, M[0].value)}${kpi(M[1].label, M[1].value, 'спрос без страницы на сайте')}${kpi(M[2].label, M[2].value)}${kpi(M[3].label, M[3].value)}</div>`;
     const gaps = d.gaps || [], gmax = Math.max(1, ...gaps.map(g=>g.freq));
     h += sec(1, 'Незакрытый спрос', 'запросы, под которые на сайте нет страницы', `<div class="panel"><table class="tbl"><thead><tr><th>Запрос</th><th>Группа</th><th></th><th style="text-align:right">Показов/мес</th></tr></thead>
-      <tbody class="bars stagger">${gaps.slice(0,12).map(g=>`<tr><td>${esc(g.phrase)}</td><td style="text-transform:capitalize">${esc(g.group.replace(/_/g,' '))}</td><td><div class="barc"><i style="--w:${(g.freq/gmax).toFixed(3)}"></i></div></td><td class="r">${fmt(g.freq)}</td></tr>`).join('')}</tbody></table></div>`);
+      <tbody class="bars stagger">${gaps.slice(0,12).map(g=>`<tr><td>${esc(g.phrase)}</td><td class="cap">${esc(g.group.replace(/_/g,' '))}</td><td><div class="barc"><i style="--w:${(g.freq/gmax).toFixed(3)}"></i></div></td><td class="r">${fmt(g.freq)}</td></tr>`).join('')}</tbody></table></div>`);
     const plan = d.plan || [];
     h += sec(2, 'Контент-план', 'темы по потенциалу трафика', `<div class="panel"><table class="tbl"><thead><tr><th>Тема</th><th>Структура</th><th>Формат</th><th style="text-align:right">Потенциал</th></tr></thead>
       <tbody class="stagger">${plan.map(p=>`<tr><td>${esc(p.title)}</td><td style="color:var(--fg-3);font-size:13px">${esc((p.structure||[]).slice(0,3).join(' · '))}</td><td><span class="fmt">${esc(p.format)}</span></td><td class="r">${fmt(p.freq)}</td></tr>`).join('')}</tbody></table></div>`);
@@ -261,7 +261,7 @@ async function renderResult(jobId, job, url){
     h += head('Медиапрогноз', 'на месяц', url);
     h += `<div class="kpis reveal" style="--d:1">${kpi('Показов в месяц', fmt(t.shows))}${kpi('Кликов', fmt(t.clicks), 'CTR '+((d.params||{}).ctr*100||0).toFixed(1).replace('.',',')+'%')}${kpi('Бюджет с НДС', fmt(t.cost)+' ₽')}${kpi('CPA', fmt(t.cpa)+' ₽', 'конверсий: '+String(t.conv).replace('.',','))}</div>`;
     h += sec(1, 'Прогноз по группам', 'бюджет пропорционален спросу', `<div class="panel"><table class="tbl"><thead><tr><th>Группа</th><th></th><th style="text-align:right">Показы</th><th style="text-align:right">Клики</th><th style="text-align:right">Бюджет, ₽</th><th style="text-align:right">CPA, ₽</th></tr></thead>
-      <tbody class="bars stagger">${gr.map(g=>`<tr><td style="text-transform:capitalize">${esc(g.name.replace(/_/g,' '))}</td><td><div class="barc"><i style="--w:${(g.cost/cmax).toFixed(3)}"></i></div></td><td class="r">${fmt(g.shows)}</td><td class="r">${fmt(g.clicks)}</td><td class="r">${fmt(g.cost)}</td><td class="r">${fmt(g.cpa)}</td></tr>`).join('')}</tbody></table></div>`);
+      <tbody class="bars stagger">${gr.map(g=>`<tr><td class="cap">${esc(g.name.replace(/_/g,' '))}</td><td><div class="barc"><i style="--w:${(g.cost/cmax).toFixed(3)}"></i></div></td><td class="r">${fmt(g.shows)}</td><td class="r">${fmt(g.clicks)}</td><td class="r">${fmt(g.cost)}</td><td class="r">${fmt(g.cpa)}</td></tr>`).join('')}</tbody></table></div>`);
     h += sec(2, 'Допущения модели', 'заменяются данными из Директа', `<div class="pre">${esc(d.pre_text||'')}</div>`);
     h += sec(3, 'Файлы', '', filesBlock());
   }

@@ -28,7 +28,7 @@ LIMITS = {
     "text": 81,
     "display_url": 20,
     "quick_header": 30,
-    "quick_desc": 60,
+    "quick_desc": 30,  # Коммандер на импорте: «Длина текста БС больше 30»
 }
 
 

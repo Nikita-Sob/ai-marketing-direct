@@ -77,8 +77,11 @@ class TestAd(unittest.TestCase):
         self.assertTrue(any("от 4 до 8" in i.message for i in errs(validate_ad(ad3))))
         long_h = [("Р" * 31, "ок", "/x")] * 4
         self.assertTrue(any("заголовок ссылки" in i.message for i in errs(validate_ad(Ad(h1="a", text="b", quick_links=long_h)))))
-        long_d = [("ок", "Д" * 61, "/x")] * 4
+        long_d = [("ок", "Д" * 31, "/x")] * 4
         self.assertTrue(any("описание ссылки" in i.message for i in errs(validate_ad(Ad(h1="a", text="b", quick_links=long_d)))))
+        # ровно 30 проходит
+        ok_d = [("ок", "Д" * 30, "/x")] * 4
+        self.assertFalse(any("описание ссылки" in i.message for i in errs(validate_ad(Ad(h1="a", text="b", quick_links=ok_d)))))
 
 
 class TestPhrase(unittest.TestCase):

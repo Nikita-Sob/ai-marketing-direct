@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Генератор маркетинга · ВШЭ</title>
+<link rel="preload" href="/static/fonts/inter-cyr.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/inter-lat.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/app.css?v=3">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23f4f4f5'/%3E%3Cpath d='M9 22V10h5.5a6 6 0 0 1 0 12H9z' fill='none' stroke='%2309090b' stroke-width='3'/%3E%3C/svg%3E">
+</head>
+<body>
+<div class="bg" aria-hidden="true"><div class="bg-grid"></div><div class="bg-glow"></div><div class="bg-noise"></div></div>
+
+<header class="nav">
+  <a class="brand" href="#" onclick="App.reset();return false">
+    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="1" y="1" width="30" height="30" rx="8" class="logo-box"/>
+      <path d="M10 22V10h5.2a6 6 0 0 1 0 12H10z" class="logo-d"/>
+      <circle cx="22.5" cy="9.5" r="2.2" class="logo-dot"/>
+    </svg>
+    <span class="brand-name">Генератор маркетинга</span>
+  </a>
+  <nav class="nav-mid" id="navSteps" aria-hidden="true"></nav>
+  <div class="nav-right">
+    <span class="status"><i class="dot"></i><span id="sysStatus">Система готова</span></span>
+    <span class="nav-sep"></span>
+    <span class="nav-meta">НИУ ВШЭ · ИИ в маркетинге</span>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ===== ВВОД ===== -->
+  <section class="hero" id="hero">
+    <div class="eyebrow reveal" style="--d:0">
+      <span class="pill">Директ</span><span class="pill">SEO</span><span class="pill">Медиаплан</span>
+      <span class="eyebrow-t">без ручной работы</span>
+    </div>
+    <h1 class="title reveal" style="--d:1">
+      <span class="line">Сайт на входе.</span>
+      <span class="line dim">Готовая кампания на&nbsp;выходе.</span>
+    </h1>
+    <p class="lead reveal" style="--d:2">Обходим сайт, собираем семантику, пишем объявления и&nbsp;отдаём XLSX
+      для&nbsp;Директ Коммандера. Около 10&nbsp;секунд вместо двух часов работы специалиста.</p>
+
+    <form class="cmd reveal" style="--d:3" id="cmd" onsubmit="App.run();return false" autocomplete="off">
+      <div class="cmd-modes" role="tablist" id="modes">
+        <span class="seg-ind" id="segInd"></span>
+        <button type="button" role="tab" class="on" data-mode="campaign">Кампания</button>
+        <button type="button" role="tab" data-mode="seo">SEO-отчёт</button>
+        <button type="button" role="tab" data-mode="forecast">Прогноз</button>
+      </div>
+      <div class="cmd-row">
+        <label class="cmd-url">
+          <span class="proto">https://</span>
+          <input id="url" type="text" spellcheck="false" placeholder="kuppersberg.ru" aria-label="Сайт">
+        </label>
+        <button class="go" id="go" type="submit">
+          <span class="go-t">Сформировать</span>
+          <kbd>Enter</kbd>
+        </button>
+      </div>
+      <div class="cmd-opts">
+        <label class="opt opt-brief">
+          <span class="opt-l">Тема</span>
+          <input id="brief" type="text" spellcheck="false" placeholder="встраиваемая техника, необязательно">
+        </label>
+        <div class="opt opt-region" id="region" data-value="Москва и область">
+          <span class="opt-l">Регион</span>
+          <button type="button" class="chip on" data-v="Москва и область">Москва и МО</button>
+          <button type="button" class="chip" data-v="Россия">Россия</button>
+        </div>
+        <label class="opt sw" title="Живые частоты; без ключа работает встроенная модель">
+          <input type="checkbox" id="wordstat"><span class="sw-ui"></span><span>Wordstat</span>
+        </label>
+        <label class="opt sw" title="7 заголовков и 3 текста каждому объявлению">
+          <input type="checkbox" id="combo" checked><span class="sw-ui"></span><span>Комбинаторика 7+3</span>
+        </label>
+      </div>
+    </form>
+
+    <div class="examples reveal" style="--d:4">
+      <span class="ex-l">Попробовать</span>
+      <button class="ex" data-url="kuppersberg.ru" data-brief="встраиваемая техника">kuppersberg.ru<em>встраиваемая техника</em></button>
+      <button class="ex" data-url="duplex-shop.ru" data-brief="рации для охоты и рыбалки">duplex-shop.ru<em>рации для охоты</em></button>
+    </div>
+
+    <div class="pipeline-teaser reveal" style="--d:5">
+      <div class="pt"><span class="pt-n">01</span><b>Обход сайта</b><span>бренд, каталог, УТП</span></div>
+      <div class="pt"><span class="pt-n">02</span><b>Семантика</b><span>фразы, частоты, минус-слова</span></div>
+      <div class="pt"><span class="pt-n">03</span><b>Объявления</b><span>по лимитам Директа</span></div>
+      <div class="pt"><span class="pt-n">04</span><b>Файлы</b><span>XLSX и чеклист с валидацией</span></div>
+    </div>
+  </section>
+
+  <!-- ===== ПРОЦЕСС ===== -->
+  <section class="run" id="run" hidden>
+    <div class="run-head">
+      <div>
+        <div class="kicker" id="runKicker">Генерация</div>
+        <h2 class="run-title" id="runTitle">kuppersberg.ru</h2>
+      </div>
+      <div class="timer" id="timer">0.0<small>с</small></div>
+    </div>
+
+    <ol class="stages" id="stages"></ol>
+
+    <div class="run-grid">
+      <div class="panel feed-panel">
+        <div class="panel-h"><span>Журнал конвейера</span><span class="live"><i></i>live</span></div>
+        <div class="feed" id="feed"></div>
+      </div>
+      <div class="panel counters" id="counters"></div>
+    </div>
+  </section>
+
+  <!-- ===== РЕЗУЛЬТАТ ===== -->
+  <section class="result" id="result" hidden></section>
+
+  <div class="toast" id="toast" role="alert"></div>
+</main>
+
+<footer class="foot">
+  <span>Работает без платных API. Wordstat по желанию.</span>
+  <span class="foot-k"><kbd>/</kbd> новый запрос</span>
+</footer>
+
+<script src="/static/app.js?v=3"></script>
+</body>
+</html>

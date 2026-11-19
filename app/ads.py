@@ -62,6 +62,12 @@ def generate_group_ad(group: dict, card: dict, idx: int) -> dict:
     cap = _cap(base)
     brand = card.get("brand") or card.get("domain", "")
     usps = list(card.get("usps", []))
+    # УТП чередуем между группами: иначе всем группам достаётся одна и та же
+    # первая фраза с сайта (наблюдено на СИЗ-ГО: у огнетушителей текст
+    # про диэлектрические комплекты)
+    if usps:
+        k = idx % len(usps)
+        usps = usps[k:] + usps[:k]
 
     # --- заголовки ---
     if _plural(base):

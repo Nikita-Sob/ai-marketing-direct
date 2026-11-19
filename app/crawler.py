@@ -65,6 +65,10 @@ def _get(url: str, timeout: int = 25) -> str:
         raise CrawlError("не открылся %s: %s" % (url, str(e)[:150]))
     if r.status_code != 200:
         raise CrawlError("HTTP %s на %s" % (r.status_code, url))
+    # кодировка: если сервер не сказал или соврал (частый случай у сайтов
+    # на windows-1251), определяем по байтам, иначе получаем кракозябры
+    if r.encoding is None or r.encoding.lower() in ("iso-8859-1", "ascii"):
+        r.encoding = r.apparent_encoding or "utf-8"
     return r.text
 
 

@@ -16,6 +16,7 @@
 Уровни проблем: ERR = Коммандер/модерация не примет, WARN = риск, решает человек.
 """
 
+import re
 from dataclasses import dataclass, field
 
 # Символы, которые Коммандер не считает в длине (из формул шаблона, колонки M/N/O)
@@ -159,3 +160,27 @@ def validate_group(name: str, phrases: list) -> list:
 def is_ok(issues: list) -> bool:
     """True, если нет ни одной проблемы уровня ERR."""
     return not any(i.level == "ERR" for i in issues)
+
+
+# Символы, запрещённые Директом в минус-фразах (буквы/цифры/+ ! " [ ] . и пробел разрешены)
+BAD_PHRASE_CHARS = re.compile(r"[^a-zа-яё0-9 +!\"\[\].-]")
+
+
+def validate_minus_words(words: list) -> list:
+    """Проверка списка минус-фраз (кампании/группы).
+
+    Директ в минус-фразах разрешает только буквы, цифры, пробел, + ! " [ ] и
+    точку в десятичных дробях. Слэш (б/у), дефис внутри слов и прочее - ERR.
+    """
+    issues = []
+    for w in words:
+        w = str(w or "").strip()
+        if not w:
+            continue
+        body = w.lstrip("-!")
+        m = BAD_PHRASE_CHARS.search(body)
+        if m:
+            issues.append(Issue("ERR", "minus",
+                "минус-фраза %r: запрещённый символ %r (Директ: только буквы, "
+                "цифры, пробел, + ! \" [ ] и точка)" % (w[:30], m.group(0))))
+    return issues

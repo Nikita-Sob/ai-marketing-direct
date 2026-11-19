@@ -207,6 +207,20 @@ class TestBuilder(unittest.TestCase):
                 r += 1
             self.assertEqual(seen_plus, len(campaign["groups"]))
 
+    def test_minus_words_rules(self):
+        """Слэш (б/у) и прочие запрещённые символы в минус-фразах = ERR,
+        сборщик такие слова в файл не пишет."""
+        from app.validator import validate_minus_words, is_ok
+        bad = validate_minus_words(["!б/у", "!как", "!санкт-петербург?"])
+        errs = [i for i in bad if i.level == "ERR"]
+        self.assertTrue(any("/" in i.message for i in errs))
+        self.assertTrue(is_ok(validate_minus_words(["!как", "!бу", "!рейтинг"])))
+        # сборщик выкидывает битые слова
+        self.assertEqual(builder._clean_minus(["!б/у", "!как", ""]),
+                         ["!как"])
+        self.assertEqual(builder._clean_minus(["аккумуляторы", "ан-тенны"]),
+                         ["аккумуляторы", "ан-тенны"])
+
     def test_no_combo_single_ad(self):
         campaign = self._campaign()
         campaign["combo"] = False

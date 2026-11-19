@@ -79,10 +79,28 @@ def _clear_data(ws) -> None:
             ws.cell(r, c).value = None
 
 
+def _clean_minus(words: list) -> list:
+    """Убрать минус-фразы с запрещёнными символами (слэш в «б/у» и пр.).
+
+    Директ в минус-фразах разрешает только буквы, цифры, пробел,
+    + ! " [ ] и точку. Всё остальное ломает загрузку, поэтому такие
+    слова не пишем в файл вовсе.
+    """
+    from app.validator import validate_minus_words, is_ok
+    out = []
+    for w in words:
+        w = str(w or "").strip()
+        if not w:
+            continue
+        if is_ok(validate_minus_words([w])):
+            out.append(w)
+    return out
+
+
 def _fill_header(ws, campaign: dict) -> None:
     """Шапка кампании, строки 6-13: метки в D, значения в E/H."""
     ws.cell(8, 5).value = int(time.strftime("%y%m%d%H%M"))  # № заказа
-    minus = campaign.get("campaign_minus") or []
+    minus = _clean_minus(campaign.get("campaign_minus") or [])
     ws.cell(9, 5).value = " ".join("-%s" % m for m in minus) if minus else None
     ws.cell(10, 5).value = 1  # оптимизировать текст под запрос
     ws.cell(11, 5).value = campaign["url"].rstrip("/")
@@ -105,7 +123,7 @@ def _fill_group_rows(ws, r: int, group: dict, ad: dict, region: str,
     quick_d = "||".join(d for _, d, _ in ad["quick_links"])
     quick_u = "||".join(u for _, _, u in ad["quick_links"])
     utoch = "||".join(ad["utochneniya"])
-    minus_group = " ".join(group.get("minus_group") or [])
+    minus_group = " ".join(_clean_minus(group.get("minus_group") or []))
     common = {
         "B": "Комбинаторное" if combo else "Текстово-графическое",
         "C": "-", "E": group["name"], "F": str(num),

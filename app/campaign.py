@@ -37,6 +37,20 @@ def generate_campaign(url: str, brief: str, region: str = "Москва и об�
         g["num"] = i + 1
         g["ad"] = ads.generate_group_ad(g, card, i)
 
+    # рекомендуемый бюджет: спрос групп из Wordstat x прогнозная модель
+    budget_hint = None
+    if use_wordstat and wordstat.available():
+        demand = 0
+        try:
+            for g in groups:
+                top = wordstat.get_top(g["base"], num_phrases=1)
+                demand += top["totalCount"]
+            from app.forecast import DEFAULTS
+            budget_hint = int(demand * DEFAULTS["search_share"] * DEFAULTS["ctr"]
+                               * DEFAULTS["cpc"] * DEFAULTS["vat"])
+        except wordstat.WordstatError:
+            budget_hint = None
+
     from app.semantics import CAMPAIGN_MINUS
     campaign = {
         "url": card["url"],
@@ -46,6 +60,7 @@ def generate_campaign(url: str, brief: str, region: str = "Москва и об�
         "groups": groups,
         "brand": card["brand"],
         "combo": combo,
+        "budget_hint": budget_hint,
     }
 
     log("4/4 сборка XLSX")
@@ -102,7 +117,14 @@ def build_checklist(campaign: dict, card: dict, stats: dict, report: dict) -> st
     a("Проверить руками перед загрузкой/после загрузки:")
     a("1. Загрузить XLSX в Директ Коммандер (Файл -> Загрузить кампанию)")
     a("2. Прогнать модерацию текстов")
-    a("3. Задать ставки или включить автоставку/бюджет")
+    a("3. Задать бюджет и ставки: бюджет в файл загрузчика не входит"
+      " (настройка кампании в интерфейсе Директа)")
+    if campaign.get("budget_hint"):
+        a("   Рекомендуемый бюджет по прогнозу: ~%s руб/мес"
+          " (спрос Wordstat x CTR 7%% x CPC 60 руб, с НДС)"
+          % ("{:,}".format(campaign["budget_hint"]).replace(",", " ")))
+    else:
+        a("   Посчитать прогноз: бот, «прогноз: %s | %s»" % (campaign["url"], "тема"))
     a("4. Проверить регионы показа: %s" % campaign["region"])
     a("5. Подключить счётчики Метрики и цели")
     a("6. Организация Яндекс.Справочника: не задана, привязать при наличии")

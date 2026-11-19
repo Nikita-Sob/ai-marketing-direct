@@ -8,6 +8,7 @@
 import argparse
 import os
 import sys
+from pathlib import Path
 
 from app.validator import Ad, validate_ad, is_ok
 
@@ -67,6 +68,106 @@ def cmd_forecast(args):
     return 0
 
 
+def cmd_evaluate(args):
+    """Оценка качества: F1 против эталона Дуплекс, STP, экономический эффект."""
+    from app import metrics, wordstat
+    from app.campaign import generate_campaign
+
+    print("1/3 генерируем кампанию по duplex-shop.ru (без Wordstat, "
+          "воспроизводимый бесплатный режим)")
+    # бриф = тема реальной кампании специалиста, условия сравниваемы
+    res = generate_campaign("https://duplex-shop.ru", "рации для охоты и рыбалки",
+                            region="Москва и область", max_groups=8,
+                            use_wordstat=False, combo=False, log=print)
+    gen_phrases = [ph for g in res["campaign"]["groups"]
+                   for ph in g["phrases"] if ph != "---autotargeting"]
+
+    print("2/3 сравниваем с эталоном (реальная кампания специалиста)")
+    etalon = metrics.etalon_phrases()
+    cmp_r = metrics.compare_semantics(gen_phrases, etalon)
+
+    # спрос эталонных фраз: живой Wordstat, если ключ есть
+    cov_note = "равномерное взвешивание (Wordstat недоступен)"
+    etalon_freqs = None
+    if not args.no_wordstat and wordstat.available():
+        etalon_freqs = {}
+        for e in etalon:
+            try:
+                top = wordstat.get_top(e, num_phrases=1)
+                etalon_freqs[e] = top["totalCount"]
+            except wordstat.WordstatError:
+                etalon_freqs = None
+                break
+        cov_note = "взвешено спросом Wordstat (30 дней)"
+    if etalon_freqs:
+        cov = metrics.demand_coverage(gen_phrases, etalon, etalon_freqs)
+    else:
+        cov = metrics.demand_coverage(gen_phrases, etalon)
+
+    print("3/3 экономика и STP")
+    econ = metrics.economic_effect(cov)
+    stp = metrics.stp_from_log()
+
+    lines = []
+    a = lines.append
+    a("# Оценка качества генератора")
+    a("")
+    a("## ML-метрики против эталона (реальная кампания Дуплекс Шоп)")
+    a("- сгенерировано фраз: %d, эталонных: %d, совпало: %d" %
+      (cmp_r["gen_total"], cmp_r["eta_total"], cmp_r["matched"]))
+    a("- **точность %.1f%%** (доля наших фраз, подтверждённых эталоном)" %
+      (cmp_r["precision"] * 100))
+    a("- **полнота %.1f%%** (доля эталона, которую мы покрыли)" %
+      (cmp_r["recall"] * 100))
+    a("- **F1 = %.3f**" % cmp_r["f1"])
+    a("- покрытие спроса: **%.1f%%** (%s)" % (cov["coverage"] * 100, cov_note))
+    if "covered_freq" in cov and cov["total_freq"]:
+        a("- охвачено показов/мес: %s из %s эталонного спроса" %
+          (cov["covered_freq"], cov["total_freq"]))
+    a("")
+    a("## STP (сквозная обработка без человека)")
+    a("- прогонов в логе: %d, чистых (0 ERR, без ручных правок): %d" %
+      (stp["total"], stp.get("clean", 0)))
+    a("- **STP = %s**" % ("%.0f%%" % (stp["stp"] * 100) if stp["stp"] is not None else "нет данных"))
+    a("- автоматические правки (подрезка лимитов) выполняются в коде,"
+      " ручные правки текстов не требуются")
+    a("")
+    a("## Экономический эффект")
+    a("- медиа-эффект покрытия семантики: **%s руб/мес** эквивалентного бюджета"
+      " (%s кликов, %s конверсий)" %
+      ("{:,}".format(econ["media_value_rub"]).replace(",", " "),
+       econ["media_clicks"], econ["media_conversions"]))
+    a("- экономия труда: **%s ч на кампанию** = %s руб" %
+      (econ["hours_saved_per_campaign"],
+       "{:,}".format(econ["labor_saving_per_campaign_rub"]).replace(",", " ")))
+    a("- при %d кампаний/мес: экономия **%s руб/мес**" %
+      (10, "{:,}".format(econ["month_labor_saving_rub"]).replace(",", " ")))
+    a("- затраты: %s руб/мес (сервер + опциональный Wordstat)" %
+      ("{:,}".format(econ["month_cost_rub"]).replace(",", " ")))
+    a("- **ROI %.0f%%**, FTE: %.2f -> %.2f на 10 кампаний/мес" %
+      (econ["roi_percent"], econ["fte_now"], econ["fte_bot"]))
+    a("")
+    a("## Допущения (все открыты, меняются параметрами)")
+    a("- ручная сборка кампании: %.1f ч, с ботом: %.1f ч" %
+      (metrics.ECON_ASSUMPTIONS["hours_manual"],
+       metrics.ECON_ASSUMPTIONS["hours_with_bot"]))
+    a("- стоимость часа специалиста: %s руб" %
+      int(metrics.ECON_ASSUMPTIONS["manager_hour_cost"]))
+    a("- прогнозная модель: CTR %d%%, CPC %s руб, CR %d%%, доля Директа %d%%" %
+      (metrics.FORECAST_PARAMS["ctr"] * 100, metrics.FORECAST_PARAMS["cpc"],
+       metrics.FORECAST_PARAMS["cr"] * 100,
+       metrics.FORECAST_PARAMS["search_share"] * 100))
+    report = "\n".join(lines)
+    out = "output/evaluation_report.md"
+    Path("output").mkdir(exist_ok=True)
+    Path(out).write_text(report, encoding="utf-8")
+    print()
+    print(report)
+    print()
+    print("Отчёт: %s" % out)
+    return 0
+
+
 def cmd_validate_xlsx(args):
     from app.builder import validate_built_xlsx
     rep = validate_built_xlsx(args.path)
@@ -116,6 +217,12 @@ def main(argv=None):
     f.add_argument("--cr", type=float, default=None, help="конверсия сайта, доля")
     f.add_argument("--outdir", default="output")
     f.set_defaults(func=cmd_forecast)
+
+    e = sub.add_parser("evaluate",
+                       help="оценка качества: F1 против эталона, STP, экономика")
+    e.add_argument("--no-wordstat", action="store_true",
+                   help="не использовать Wordstat даже при наличии ключа")
+    e.set_defaults(func=cmd_evaluate)
 
     v = sub.add_parser("validate", help="проверить объявление по лимитам")
     v.add_argument("--h1", help="заголовок 1 (макс 56)")

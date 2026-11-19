@@ -67,8 +67,8 @@ def plus_operators(phrase: str) -> str:
 
 
 def _stem(w: str) -> str:
-    """Грубый стем: первые 5 символов (хватает для падежей/чисел)."""
-    return w[:5] if len(w) > 5 else w
+    """Грубый стем: первые 4 символа (раци- / рации, панел- / панели)."""
+    return w[:4] if len(w) > 4 else w
 
 
 def _is_junk(phrase: str) -> bool:

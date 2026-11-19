@@ -231,6 +231,7 @@ def run_forecast(url: str, brief: str, region: str = "Москва и облас
     stamp = time.strftime("%Y%m%d_%H%M")
     slug = "".join(ch for ch in card["domain"].split(".")[0] if ch.isalnum())[:20]
     out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
     txt_path = out_dir / ("forecast_%s_%s.txt" % (slug, stamp))
     txt_path.write_text(text, encoding="utf-8")
     log("прогноз готов: %s" % txt_path)

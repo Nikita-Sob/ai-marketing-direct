@@ -56,6 +56,11 @@ def generate_campaign(url: str, brief: str, region: str = "Москва и об�
     stats = builder.build_xlsx(campaign, str(xlsx_path))
 
     report = validate_built_xlsx(str(xlsx_path))
+    from app.metrics import log_run
+    log_run("campaign", card["url"], ok=not report["err"],
+            err_count=len(report["err"]), warn_count=len(report["warn"]),
+            extra={"groups": stats["groups"], "phrases": stats["phrases"],
+                   "xlsx": str(xlsx_path)})
     checklist = build_checklist(campaign, card, stats, report)
 
     checklist_path = out_dir / ("%s_%s_checklist.txt" % (slug, stamp))

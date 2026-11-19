@@ -150,16 +150,17 @@ def _fill_group_rows(ws, r: int, group: dict, ad: dict, region: str,
     if not combo:
         return r
 
-    # строка вариантов комбинаторики (A = "+"): доп. объявление группы.
-    # Коммандер при импорте создаёт его отдельным объявлением, поэтому
-    # оно обязано иметь собственные Заголовок 1/2 и Текст (берём первый
-    # вариант комбинаторики), иначе получаются пустые объявления-заглушки.
+    # строка вариантов комбинаторики (A = "+"): та же связка J/K/L, что у
+    # основного объявления (по ней Коммандер склеивает строки в одно
+    # объявление), плюс P..V (7 заголовков) и W..Y (3 текста) как варианты.
+    # Если дать здесь другие J/K/L или пустые, Коммандер либо создаст
+    # отдельное объявление-заглушку, либо потеряет варианты.
     for col_name, val in common.items():
         ws.cell(r, COL[col_name]).value = val
     ws.cell(r, COL["A"]).value = "+"
-    ws.cell(r, COL["J"]).value = ad["combo_heads"][0] if ad["combo_heads"] else ad["h1"]
+    ws.cell(r, COL["J"]).value = ad["h1"]
     ws.cell(r, COL["K"]).value = ad["h2"]
-    ws.cell(r, COL["L"]).value = ad["combo_texts"][0] if ad["combo_texts"] else ad["text"]
+    ws.cell(r, COL["L"]).value = ad["text"]
     ws.cell(r, COL["M"]).value = _len_formula("J", r)
     ws.cell(r, COL["N"]).value = _len_formula("K", r)
     ws.cell(r, COL["O"]).value = _len_formula("L", r)

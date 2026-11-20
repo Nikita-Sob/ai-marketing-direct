@@ -39,6 +39,15 @@ def fit_limits(text: str, limit: int) -> str:
     return out
 
 
+def _pack(parts: list, limit: int) -> str:
+    """Склеить предложения целиком в порядке приоритета; не влезшие пропускаем."""
+    out = []
+    for p in parts:
+        if p and commander_len(" ".join(out + [p])) <= limit:
+            out.append(p)
+    return " ".join(out)
+
+
 def _cap(s: str) -> str:
     s = s.strip()
     return s[:1].upper() + s[1:] if s else s
@@ -84,18 +93,16 @@ def generate_group_ad(group: dict, card: dict, idx: int) -> dict:
             s += "."
         return s
 
-    parts = []
-    if usps:
-        parts.append(fit_limits(_sentence(usps[0]), 70))
-    parts.append("Доставка по России.")
-    if len(usps) > 1:
-        p2 = fit_limits(_sentence(usps[1]), 40)
-        if p2 and commander_len(" ".join(parts + [p2])) <= LIMITS["text"]:
-            parts.insert(1, p2)
-    text = " ".join(parts)
-    if not text.endswith((".", "!", "?")):
-        text += "."
-    text = fit_limits(text, LIMITS["text"])
+    deliv = "Доставка по России."
+    budget = LIMITS["text"] - commander_len(deliv) - 1   # место под УТП
+    cands = [_sentence(u) for u in usps]
+    # берём первое УТП, которое влезает ЦЕЛИКОМ; иначе режем первое по словам
+    first = next((c for c in cands if commander_len(c) <= budget), None)
+    if first is None and cands:
+        first = fit_limits(cands[0], budget)
+    parts = [first] if first else []
+    parts += [c for c in cands if c != first][:1]
+    text = _pack(parts + [deliv], LIMITS["text"])
     if commander_len(text) < 20:
         text = fit_limits("%s: официальный магазин. Доставка по России." % brand,
                           LIMITS["text"])
@@ -143,11 +150,13 @@ def generate_group_ad(group: dict, card: dict, idx: int) -> dict:
         usps[2:3],
     ]
     for i, seed in enumerate(seeds):
-        p = []
-        for s in seed:
-            p.append(fit_limits(s.rstrip(".") + ".", 60))
-        p.append("Доставка по России." if i != 1 else "Гарантия качества.")
-        t = fit_limits(" ".join(p), LIMITS["text"])
+        tail = "Доставка по России." if i != 1 else "Гарантия качества."
+        room = LIMITS["text"] - commander_len(tail) - 1
+        body = []
+        for u in seed:
+            u = _sentence(u)
+            body.append(u if commander_len(u) <= room else fit_limits(u, room))
+        t = _pack(body + [tail], LIMITS["text"])
         if t and t.lower() not in [x.lower() for x in combo_texts]:
             combo_texts.append(t)
     while len(combo_texts) < 3:

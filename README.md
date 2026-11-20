@@ -27,7 +27,7 @@
 `validate --h1 ... --text ...` — проверка одного объявления,
 `validate-xlsx file.xlsx` — проверка готового файла Коммандера.
 
-## Wordstat (опционально)
+## Wordstat
 
 Живые частоты запросов через Yandex Search API. API платный, поэтому по
 умолчанию выключен и не требуется: ключи в env (YANDEX_SEARCH_API_KEY,

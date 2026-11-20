@@ -13,12 +13,13 @@
 
 ## Быстрый старт (бесплатный режим, без внешних API)
 
-    python3 -m venv .venv
-    .venv/bin/pip install -r requirements.txt
-    cp .env.example .env        # заполнять необязательно: всё работает и без ключей
-    .venv/bin/python -m unittest discover tests          # ~70 тестов, без сети
-    .venv/bin/python -m app.cli generate https://duplex-shop.ru --brief "рации для охоты" --no-wordstat
-    .venv/bin/python -m app.cli seo https://kuppersberg.ru --brief "встраиваемая техника" --no-wordstat
+    cd $env:USERPROFILE\Desktop
+    git clone https://github.com/Nikita-Sob/ai-marketing-direct.git
+    cd ai-marketing-direct
+    python -m venv .venv
+    .venv\Scripts\pip install -r requirements.txt
+    .venv\Scripts\python -m unittest discover -s tests
+    .venv\Scripts\python -m app.cli generate https://duplex-shop.ru --brief "рации для охоты" --no-wordstat
 
 Результат: `output/*.xlsx` + чеклист. Без Wordstat семантика собирается на
 встроенных шаблонах (оператор + на стоп-словах, кросс-минусация групп).

@@ -12,6 +12,8 @@
 Каждое поле проходит fit_limits, объявление целиком validate_ad.
 """
 
+import re
+
 from app.validator import Ad, validate_ad, is_ok, commander_len, LIMITS
 from app.semantics import plus_operators
 
@@ -34,6 +36,10 @@ def fit_limits(text: str, limit: int) -> str:
     while words and commander_len(" ".join(words)) > limit:
         words.pop()
     out = " ".join(words).rstrip(",;:")
+    # не оставлять висячие союзы/предлоги после обрезки («...без наценок и.»)
+    dangle = re.compile(r"\s+(и|или|а|но|да|что|без|для|по|на|в|от|с|к|у|не)$", re.IGNORECASE)
+    while len(dangle.sub("", out)) < len(out) and dangle.search(out):
+        out = dangle.sub("", out).rstrip(",;:")
     if text and text[-1] in ".!?" and not out.endswith((".", "!", "?")):
         out += text[-1]
     return out

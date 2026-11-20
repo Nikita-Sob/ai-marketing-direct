@@ -1,6 +1,7 @@
 """Тесты метрик качества (STP, F1, экономика) и веб-API (TestClient, без сети)."""
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -81,8 +82,14 @@ class TestSTP(unittest.TestCase):
 
 class TestWeb(unittest.TestCase):
     def setUp(self):
+        # тесты ходят без ключа доступа: временно убираем WEB_TOKEN из env
+        self._saved_token = os.environ.pop("WEB_TOKEN", None)
         self.client = TestClient(web.app)
         web.JOBS.clear()
+
+    def tearDown(self):
+        if self._saved_token is not None:
+            os.environ["WEB_TOKEN"] = self._saved_token
 
     def test_index_page(self):
         r = self.client.get("/")

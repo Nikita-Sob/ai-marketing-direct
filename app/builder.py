@@ -113,10 +113,12 @@ def _fill_group_rows(ws, r: int, group: dict, ad: dict, region: str,
                      combo: bool = True) -> int:
     """Строки одной группы. Возвращает номер следующей свободной строки.
 
-    combo=True: строка вариантов "+" (Коммандер при импорте может
-    собирать её в отдельное объявление). combo=False: только строки
-    фраз с J/K/L, тип Текстово-графическое, гарантированно одно
-    объявление на группу.
+    combo=True: варианты комбинаторики P..V (7 заголовков) и W..Y
+    (3 текста) пишем прямо в строки фраз. Отдельную строку "+" НЕ
+    создаём: при импорте новой кампании Коммандер всегда собирает её
+    в отдельное объявление (получалась пустая заглушка), а варианты
+    из неё вешает на основное объявление группы. combo=False: без
+    вариантов, тип Текстово-графическое.
     """
     num = group["num"]
     quick_h = "||".join("[%s]" % h for h, _, _ in ad["quick_links"])
@@ -133,7 +135,12 @@ def _fill_group_rows(ws, r: int, group: dict, ad: dict, region: str,
         "BN": utoch, "BO": minus_group or None,
     }
 
-    # строки фраз: по одной на фразу, у всех одно объявление
+    # строки фраз: по одной на фразу, у всех одно объявление;
+    # при combo=True варианты комбинаторики лежат прямо в этих строках
+    combo_cols = ["P", "Q", "R", "S", "T", "U", "V"]
+    combo_formula = ["Z", "AA", "AB", "AC", "AD", "AE", "AF"]
+    text_cols = ["W", "X", "Y"]
+    text_formula = ["AG", "AH", "AI"]
     for ph in group["phrases"]:
         for col_name, val in common.items():
             ws.cell(r, COL[col_name]).value = val
@@ -145,37 +152,17 @@ def _fill_group_rows(ws, r: int, group: dict, ad: dict, region: str,
         ws.cell(r, COL["M"]).value = _len_formula("J", r)
         ws.cell(r, COL["N"]).value = _len_formula("K", r)
         ws.cell(r, COL["O"]).value = _len_formula("L", r)
+        if combo:
+            for cc, h in zip(combo_cols, ad["combo_heads"]):
+                ws.cell(r, COL[cc]).value = h
+            for cc, t in zip(text_cols, ad["combo_texts"]):
+                ws.cell(r, COL[cc]).value = t
+            for fc, cc in zip(combo_formula, combo_cols):
+                ws.cell(r, COL[fc]).value = _len_formula(cc, r)
+            for fc, cc in zip(text_formula, text_cols):
+                ws.cell(r, COL[fc]).value = _len_formula(cc, r)
         r += 1
-
-    if not combo:
-        return r
-
-    # строка вариантов комбинаторики (A = "+"): та же связка J/K/L, что у
-    # основного объявления (по ней Коммандер склеивает строки в одно
-    # объявление), плюс P..V (7 заголовков) и W..Y (3 текста) как варианты.
-    # Если дать здесь другие J/K/L или пустые, Коммандер либо создаст
-    # отдельное объявление-заглушку, либо потеряет варианты.
-    for col_name, val in common.items():
-        ws.cell(r, COL[col_name]).value = val
-    ws.cell(r, COL["A"]).value = "+"
-    ws.cell(r, COL["J"]).value = ad["h1"]
-    ws.cell(r, COL["K"]).value = ad["h2"]
-    ws.cell(r, COL["L"]).value = ad["text"]
-    ws.cell(r, COL["M"]).value = _len_formula("J", r)
-    ws.cell(r, COL["N"]).value = _len_formula("K", r)
-    ws.cell(r, COL["O"]).value = _len_formula("L", r)
-    ws.cell(r, COL["AV"]).value = ad["link_plain"]  # в эталоне без UTM
-    combo_cols = ["P", "Q", "R", "S", "T", "U", "V"]
-    formula_cols = ["Z", "AA", "AB", "AC", "AD", "AE", "AF"]
-    for cc, h in zip(combo_cols, ad["combo_heads"]):
-        ws.cell(r, COL[cc]).value = h
-    for cc, t in zip(["W", "X", "Y"], ad["combo_texts"]):
-        ws.cell(r, COL[cc]).value = t
-    for fc, cc in zip(formula_cols, combo_cols):
-        ws.cell(r, COL[fc]).value = _len_formula(cc, r)
-    for fc, cc in zip(["AG", "AH", "AI"], ["W", "X", "Y"]):
-        ws.cell(r, COL[fc]).value = _len_formula(cc, r)
-    return r + 1
+    return r
 
 
 def build_xlsx(campaign: dict, out_path: str) -> dict:

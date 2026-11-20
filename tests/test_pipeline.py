@@ -185,27 +185,31 @@ class TestBuilder(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = tmp + "/out.xlsx"
             stats = builder.build_xlsx(campaign, path)
-            # строк: (фразы + 1 вариант) на группу
-            expect_rows = sum(len(g["phrases"]) + 1 for g in campaign["groups"])
+            # строк: только строки фраз, строки "+" не создаём
+            expect_rows = sum(len(g["phrases"]) for g in campaign["groups"])
             self.assertEqual(stats["rows"], expect_rows)
             rep = builder.validate_built_xlsx(path)
             self.assertEqual(rep["err"], [])
-            # объявлений: строки фраз + строка вариантов "+" на группу
-            self.assertEqual(rep["ads"],
-                             sum(len(g["phrases"]) + 1 for g in campaign["groups"]))
-            # в строке "+" тоже заполнены J/K/L (иначе Коммандер создаст пустое объявление)
+            self.assertEqual(rep["ads"], expect_rows)
             import openpyxl
             wb = openpyxl.load_workbook(path)
             ws = wb["Тексты"]
             r = builder.DATA_START
-            seen_plus = 0
+            n_plus = 0
             while ws.cell(r, 1).value in ("-", "+"):
                 if ws.cell(r, 1).value == "+":
-                    self.assertTrue(ws.cell(r, builder.COL["J"]).value)
-                    self.assertTrue(ws.cell(r, builder.COL["L"]).value)
-                    seen_plus += 1
+                    n_plus += 1
+                else:
+                    # варианты комбинаторики лежат прямо в строках фраз:
+                    # 7 заголовков P..V и 3 текста W..Y заполнены на каждой
+                    heads = [ws.cell(r, builder.COL[cc]).value
+                             for cc in ("P", "Q", "R", "S", "T", "U", "V")]
+                    texts = [ws.cell(r, builder.COL[cc]).value
+                             for cc in ("W", "X", "Y")]
+                    self.assertTrue(all(heads), "r%d: заголовки P..V" % r)
+                    self.assertTrue(all(texts), "r%d: тексты W..Y" % r)
                 r += 1
-            self.assertEqual(seen_plus, len(campaign["groups"]))
+            self.assertEqual(n_plus, 0)
 
     def test_minus_words_rules(self):
         """Слэш (б/у) и прочие запрещённые символы в минус-фразах = ERR,
